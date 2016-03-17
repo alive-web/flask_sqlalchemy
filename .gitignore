@@ -2,3 +2,6 @@
 
 # Virtualenv
 venv/
+
+src/db_repository/
+*.db
