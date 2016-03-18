@@ -2,10 +2,11 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
+from forms import LoginForm, EditForm
 from flask import render_template, flash, redirect, session, url_for, request, g
 from flask.ext.login import login_user, logout_user, current_user, login_required
+
 from app import app, db, lm, oid
-from forms import LoginForm, EditForm
 from models import User, ROLE_USER, ROLE_ADMIN
 
 
@@ -99,6 +100,7 @@ def user(nickname):
 @login_required
 def edit():
     form = EditForm()
+    app.logger.info('edit profile {}'.format(g.user.nickname))
     if form.validate_on_submit():
         g.user.nickname = form.nickname.data
         g.user.about_me = form.about_me.data
