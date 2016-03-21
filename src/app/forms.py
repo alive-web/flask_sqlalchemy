@@ -1,14 +1,18 @@
 __author__ = 'plevytskyi'
 from flask.ext.wtf import Form
-from wtforms import TextField, BooleanField, TextAreaField
-from wtforms.validators import Required, Length
+from wtforms import BooleanField, TextAreaField, StringField
+from wtforms.validators import Length, DataRequired
 
 
 class EditForm(Form):
-    nickname = TextField('nickname', validators=[Required()])
+    nickname = StringField('nickname', validators=[DataRequired()])
     about_me = TextAreaField('about_me', validators=[Length(min=0, max=140)])
 
 
 class LoginForm(Form):
-    openid = TextField('openid', validators=[Required()])
+    openid = StringField('openid', validators=[DataRequired()])
     remember_me = BooleanField('remember_me', default=False)
+
+
+class PostForm(Form):
+    post = StringField('post', validators=[DataRequired()])

@@ -10,7 +10,7 @@
   <body>
     <div>Microblog:
         <a href="{{ url_for('IndexView:get') }}">Home</a>
-        {% if g.user.is_authenticated %}
+        {% if g.user and g.user.is_authenticated %}
         | <a href="{{ url_for('UserView:profile', nickname = g.user.nickname) }}">Your Profile</a>
         | <a href="{{ url_for('LogoutView:get') }}">Logout</a>
         {% endif %}

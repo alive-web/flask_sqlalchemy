@@ -2,13 +2,13 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
-from forms import LoginForm, EditForm
+from forms import LoginForm, EditForm, PostForm
 from flask.ext.classy import FlaskView, route
-from flask import render_template, flash, redirect, session, url_for, request, g
+from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from app import app, db, lm, oid
-from models import User, ROLE_USER
+from models import User, Post, ROLE_USER
 
 
 @lm.user_loader
@@ -80,17 +80,19 @@ class IndexView(BaseView):
     @login_required
     def get(self):
         user = g.user
-        posts = [
-            {
-                'author': {'nickname': 'John'},
-                'body': 'Beautiful day in Portland!'
-            },
-            {
-                'author': {'nickname': 'Susan'},
-                'body': 'The Avengers movie was so cool!'
-            }
-        ]
-        return render_template('index.html', title='Home', user=user, posts=posts)
+        form = PostForm()
+        posts = Post.query.all()
+        return render_template('index.html', title='Home', user=user, posts=posts, form=form)
+
+    @login_required
+    def post(self):
+        form = PostForm()
+        if form.validate_on_submit():
+            post = Post(body=form.post.data, timestamp=datetime.utcnow(), author=g.user)
+            db.session.add(post)
+            db.session.commit()
+            flash('Your post is now live!')
+            return redirect(url_for('IndexView:get'))
 
 
 class UserView(BaseView):
@@ -102,10 +104,7 @@ class UserView(BaseView):
         if not user:
             flash('User ' + nickname + ' not found.')
             return redirect(url_for('IndexView:get'))
-        posts = [
-            {'author': user, 'body': 'Test post #1'},
-            {'author': user, 'body': 'Test post #2'}
-        ]
+        posts = Post.query.filter_by(user_id=g.user.id)
         return render_template('user.html', user=user, posts=posts)
 
     @route('/edit')
@@ -141,3 +140,19 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
+
+
+class UserApiView(FlaskView):
+
+    @route('/')
+    @route('/<int:user_id>')
+    def get(self, user_id=None):
+        result = {}
+        if user_id:
+            user = User.query.get_or_404(user_id)
+            result[user.id] = user.serialize()
+        else:
+            users = User.query.all()
+            for user in users:
+                result[user.id] = user.serialize()
+        return jsonify(result)

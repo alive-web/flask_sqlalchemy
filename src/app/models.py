@@ -1,5 +1,6 @@
 __author__ = 'plevytskyi'
 from hashlib import md5
+
 from app import db
 
 ROLE_USER = 0
@@ -14,6 +15,16 @@ class User(db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime)
+
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'nickname': self.nickname,
+            'posts': self.serialize_posts()
+        }
+
+    def serialize_posts(self):
+        return [item.serialize() for item in self.posts.all()]
 
     @property
     def is_authenticated(self):
@@ -48,3 +59,10 @@ class Post(db.Model):
 
     def __repr__(self):
         return '<Post %r>' % self.body
+
+    def serialize(self):
+        """Return object data in easily serializeable format"""
+        return {
+            'id': self.id,
+            'body': self.body,
+        }
