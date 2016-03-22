@@ -144,15 +144,52 @@ def internal_error(error):
 
 class UserApiView(FlaskView):
 
-    @route('/')
-    @route('/<int:user_id>')
-    def get(self, user_id=None):
-        result = {}
-        if user_id:
-            user = User.query.get_or_404(user_id)
-            result[user.id] = user.serialize()
-        else:
-            users = User.query.all()
-            for user in users:
-                result[user.id] = user.serialize()
+    def get(self, user_id):
+        user = User.query.get(user_id)
+        result = user.serialize() if user else {'error': "don't found"}
         return jsonify(result)
+
+    def post(self, user_id):
+        return jsonify({'ok': 'ok'})
+
+
+class ParagraphApiView(FlaskView):
+
+    def get(self, paragraph_id):
+        paragraph = Post.query.get(paragraph_id)
+        result = paragraph.serialize() if paragraph else {'error': "don't found"}
+        return jsonify(result)
+
+    def put(self, paragraph_id):
+        paragraph = Post.query.get(paragraph_id)
+        if not paragraph:
+            return jsonify({'error': 'bad id'})
+        body = request.form.get('body', None)
+        author = request.form.get('author', -1)
+        author = User.query.get(author)
+        if body is None and not author:
+            return jsonify({'error': 'bad parameters'})
+        paragraph.body = body or paragraph.body
+        paragraph.user_id = author.id if author else paragraph.user_id
+        db.session.commit()
+        return jsonify(paragraph.serialize())
+
+    def post(self):
+        body = request.form.get('body', None)
+        author = request.form.get('author', -1)
+        author = User.query.get(author)
+        if body is None or not author:
+            return jsonify({'error': 'bad parameters'})
+        paragraph = Post(body=body, timestamp=datetime.utcnow(), author=author)
+        db.session.add(paragraph)
+        db.session.commit()
+
+        return jsonify(paragraph.serialize())
+
+    def delete(self, paragraph_id):
+        paragraph = Post.query.get(paragraph_id)
+        if not paragraph:
+            return jsonify({'error': 'bad id'})
+        db.session.delete(paragraph)
+        db.session.commit()
+        return jsonify({'success': '{} deleted'.format(paragraph_id)})

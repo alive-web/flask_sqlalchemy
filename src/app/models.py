@@ -65,4 +65,6 @@ class Post(db.Model):
         return {
             'id': self.id,
             'body': self.body,
+            'author': self.user_id,
+            'created': self.timestamp
         }
