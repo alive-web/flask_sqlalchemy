@@ -6,11 +6,25 @@
       <table>
           <tr>
               <td>Say something:</td>
-              <td>{{ form.post(size=30, maxlength=140) }}</td>
+          </tr>
+          <tr>
+              <td>title</td>
+              <td>{{ form.title(size=10, maxlength=40) }}</td>
+              <td>body</td>
+              <td>{{ form.post(size=30, maxlength=240) }}</td>
+          </tr>
+          <tr>
+              <td></td>
               <td>
-              {% for error in form.post.errors %}
-                  <span style="color: red;">[{{ error }}]</span><br>
-              {% endfor %}
+                  {% if form.title.errors %}
+                      <span style="color: red;">{{ form.title.errors }}</span>
+                  {% endif %}
+              </td>
+              <td></td>
+              <td>
+                  {% if form.post.errors %}
+                      <span style="color: red;">{{ form.post.errors }}</span>
+                  {% endif %}
               </td>
           </tr>
           <tr>

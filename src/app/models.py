@@ -53,7 +53,8 @@ class User(db.Model):
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.String(140))
+    title = db.Column(db.String(40))
+    body = db.Column(db.String(240))
     timestamp = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
@@ -64,6 +65,7 @@ class Post(db.Model):
         """Return object data in easily serializeable format"""
         return {
             'id': self.id,
+            'title': self.title,
             'body': self.body,
             'author': self.user_id,
             'created': self.timestamp

@@ -88,11 +88,13 @@ class IndexView(BaseView):
     def post(self):
         form = PostForm()
         if form.validate_on_submit():
-            post = Post(body=form.post.data, timestamp=datetime.utcnow(), author=g.user)
+            post = Post(title=form.title.data, body=form.post.data, timestamp=datetime.utcnow(), author=g.user)
             db.session.add(post)
             db.session.commit()
             flash('Your post is now live!')
             return redirect(url_for('IndexView:get'))
+        posts = Post.query.all()
+        return render_template('index.html', title='Home', user=g.user, posts=posts, form=form)
 
 
 class UserView(BaseView):
@@ -193,3 +195,12 @@ class ParagraphApiView(FlaskView):
         db.session.delete(paragraph)
         db.session.commit()
         return jsonify({'success': '{} deleted'.format(paragraph_id)})
+
+
+class SearchTextApiView(FlaskView):
+
+    def get(self):
+        search = request.args.get('text', '')
+        if not search:
+            return jsonify({'error': 'bad parameters'})
+        return jsonify({'ok': search})
