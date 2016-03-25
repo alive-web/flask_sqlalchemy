@@ -2,6 +2,8 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
+from nltk.tokenize import word_tokenize
+from sqlalchemy import or_, func
 from forms import LoginForm, EditForm, PostForm
 from flask.ext.classy import FlaskView, route
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
@@ -17,7 +19,6 @@ def load_user(user_id):
 
 
 class BaseView(FlaskView):
-
     def before_request(self, name, *args, **kwargs):
         g.user = current_user
         if g.user.is_authenticated:
@@ -27,7 +28,6 @@ class BaseView(FlaskView):
 
 
 class LoginView(BaseView):
-
     @oid.loginhandler
     def get(self):
         if g.user is not None and g.user.is_authenticated:
@@ -69,14 +69,12 @@ class LoginView(BaseView):
 
 
 class LogoutView(BaseView):
-
     def get(self):
         logout_user()
         return redirect(url_for('IndexView:get'))
 
 
 class IndexView(BaseView):
-
     @login_required
     def get(self):
         user = g.user
@@ -98,7 +96,6 @@ class IndexView(BaseView):
 
 
 class UserView(BaseView):
-
     @route('/<nickname>')
     @login_required
     def profile(self, nickname):
@@ -145,7 +142,6 @@ def internal_error(error):
 
 
 class UserApiView(FlaskView):
-
     def get(self, user_id):
         user = User.query.get(user_id)
         result = user.serialize() if user else {'error': "don't found"}
@@ -156,7 +152,6 @@ class UserApiView(FlaskView):
 
 
 class ParagraphApiView(FlaskView):
-
     def get(self, paragraph_id):
         paragraph = Post.query.get(paragraph_id)
         result = paragraph.serialize() if paragraph else {'error': "don't found"}
@@ -166,23 +161,26 @@ class ParagraphApiView(FlaskView):
         paragraph = Post.query.get(paragraph_id)
         if not paragraph:
             return jsonify({'error': 'bad id'})
+        title = request.form.get('title', None)
         body = request.form.get('body', None)
         author = request.form.get('author', -1)
         author = User.query.get(author)
-        if body is None and not author:
+        if body is None and title is None and not author:
             return jsonify({'error': 'bad parameters'})
+        paragraph.title = title or paragraph.title
         paragraph.body = body or paragraph.body
         paragraph.user_id = author.id if author else paragraph.user_id
         db.session.commit()
         return jsonify(paragraph.serialize())
 
     def post(self):
+        title = request.form.get('title', None)
         body = request.form.get('body', None)
         author = request.form.get('author', -1)
         author = User.query.get(author)
-        if body is None or not author:
+        if body is None or title is None or not author:
             return jsonify({'error': 'bad parameters'})
-        paragraph = Post(body=body, timestamp=datetime.utcnow(), author=author)
+        paragraph = Post(title=title, body=body, timestamp=datetime.utcnow(), author=author)
         db.session.add(paragraph)
         db.session.commit()
 
@@ -197,10 +195,28 @@ class ParagraphApiView(FlaskView):
         return jsonify({'success': '{} deleted'.format(paragraph_id)})
 
 
-class SearchTextApiView(FlaskView):
-
+class PostsApiView(FlaskView):
     def get(self):
-        search = request.args.get('text', '')
+        paragraphs = Post.query.all()
+        return jsonify({'success': [paragraph.serialize() for paragraph in paragraphs]})
+
+
+class SearchTextApiView(FlaskView):
+    def get(self):
+        search = request.args.get('text', '').lower()
         if not search:
             return jsonify({'error': 'bad parameters'})
-        return jsonify({'ok': search})
+        query = db.session.query(User, Post).join(Post). \
+            filter(or_(Post.title.like('%' + search + '%'),
+                       Post.body.like('%' + search + '%'),
+                       User.nickname.like('%' + search + '%')))
+        result = []
+        for user, post in query.all():
+            row = {'author': user.serialize(),
+                   'post': post.serialize()}
+            row['author']['count_nickname'] = len([word for word in word_tokenize(user.nickname) if search == word.lower()])
+            row['post']['count_title'] = len([word for word in word_tokenize(post.title) if search == word.lower()])
+            row['post']['count_body'] = len([word for word in word_tokenize(post.body) if search == word.lower()])
+            row['total_count'] = row['author']['count_nickname']+row['post']['count_title']+row['post']['count_body']
+            result.append(row)
+        return jsonify({'success': sorted(result, key=lambda x: x['total_count'], reverse=True)})

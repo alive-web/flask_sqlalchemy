@@ -19,8 +19,9 @@ class User(db.Model):
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
+            'id': self.id,
             'nickname': self.nickname,
-            'posts': self.serialize_posts()
+            'email': self.email
         }
 
     def serialize_posts(self):
@@ -67,6 +68,5 @@ class Post(db.Model):
             'id': self.id,
             'title': self.title,
             'body': self.body,
-            'author': self.user_id,
             'created': self.timestamp
         }
