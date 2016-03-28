@@ -32,7 +32,7 @@ class LoginView(BaseView):
     @oid.loginhandler
     def get(self):
         if g.user is not None and g.user.is_authenticated:
-            return redirect(url_for('index'))
+            return redirect(url_for('IndexView:post'))
         form = LoginForm()
         return render_template('login.html', title='Sign In', form=form, providers=app.config['OPENID_PROVIDERS'],
                                error=oid.fetch_error())
