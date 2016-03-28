@@ -9,7 +9,7 @@ from flask.ext.classy import FlaskView, route
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
-from app import app, db, lm, oid
+from app import app, db, lm, oid, emails
 from config import POSTS_PER_PAGE
 from models import User, Post, ROLE_USER
 
@@ -144,6 +144,7 @@ class FollowView(BaseView):
     @login_required
     def get(self, nickname):
         user = User.query.filter_by(nickname=nickname).first()
+        emails.follower_notification(user, g.user)
         if not user:
             flash('User ' + nickname + ' not found.')
             return redirect(url_for('IndexView:get'))
