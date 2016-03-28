@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Hi, {{ g.user.nickname }}!</h1>
-  <form action="" method="post" name="post">
+  <form action="{{ url_for('IndexView:post') }}" method="post" name="post">
       {{ form.hidden_tag() }}
       <table>
           <tr>
@@ -34,9 +34,11 @@
           </tr>
       </table>
   </form>
-  {% for post in posts %}
+  {% for post in posts.items %}
       <p>
-          {{ post.author.nickname }} says: <b>{{ post.body }}</b>
+          {% include 'post.html' %}
       </p>
   {% endfor %}
+  {% if posts.has_prev %}<a href="{{ url_for('IndexView:get_0', page = posts.prev_num) }}"><< Newer posts</a>{% else %}<< Newer posts{% endif %} |
+  {% if posts.has_next %}<a href="{{ url_for('IndexView:get_0', page = posts.next_num) }}">Older posts >></a>{% else %}Older posts >>{% endif %}
 {% endblock %}

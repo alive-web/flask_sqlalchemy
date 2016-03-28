@@ -3,13 +3,14 @@ __author__ = 'plevytskyi'
 from datetime import datetime
 
 from nltk.tokenize import word_tokenize
-from sqlalchemy import or_, func
+from sqlalchemy import or_
 from forms import LoginForm, EditForm, PostForm
 from flask.ext.classy import FlaskView, route
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from app import app, db, lm, oid
+from config import POSTS_PER_PAGE
 from models import User, Post, ROLE_USER
 
 
@@ -57,8 +58,12 @@ class LoginView(BaseView):
             nickname = resp.nickname
             if nickname is None or nickname == "":
                 nickname = resp.email.split('@')[0]
+            nickname = User.make_unique_nickname(nickname)
             user = User(nickname=nickname, email=resp.email, role=ROLE_USER)
             db.session.add(user)
+            db.session.commit()
+            # make the user follow him/herself
+            db.session.add(user.follow(user))
             db.session.commit()
         remember_me = False
         if 'remember_me' in session:
@@ -70,16 +75,21 @@ class LoginView(BaseView):
 
 class LogoutView(BaseView):
     def get(self):
+        app.logger.info('{} log out'.format(g.user.nickname))
         logout_user()
-        return redirect(url_for('IndexView:get'))
+        return redirect(url_for('IndexView:get_1'))
 
 
 class IndexView(BaseView):
+
+    @route('/')
+    @route('/index')
+    @route('/index/<int:page>')
     @login_required
-    def get(self):
+    def get(self, page=1):
         user = g.user
         form = PostForm()
-        posts = Post.query.all()
+        posts = g.user.followed_posts().paginate(page, POSTS_PER_PAGE, False)
         return render_template('index.html', title='Home', user=user, posts=posts, form=form)
 
     @login_required
@@ -90,27 +100,26 @@ class IndexView(BaseView):
             db.session.add(post)
             db.session.commit()
             flash('Your post is now live!')
-            return redirect(url_for('IndexView:get'))
+            return redirect(url_for('IndexView:get_1'))
         posts = Post.query.all()
         return render_template('index.html', title='Home', user=g.user, posts=posts, form=form)
 
 
 class UserView(BaseView):
     @route('/<nickname>')
-    @login_required
-    def profile(self, nickname):
+    @route('/<nickname>/<int:page>')
+    def profile(self, nickname, page=1):
         user = User.query.filter_by(nickname=nickname).first()
         if not user:
             flash('User ' + nickname + ' not found.')
-            return redirect(url_for('IndexView:get'))
-        posts = Post.query.filter_by(user_id=g.user.id)
+            return redirect(url_for('IndexView:get_1'))
+        posts = user.posts.paginate(page, POSTS_PER_PAGE, False)
         return render_template('user.html', user=user, posts=posts)
 
     @route('/edit')
     @login_required
     def get(self):
-        app.logger.info('edit profile {}'.format(g.user.nickname))
-        form = EditForm()
+        form = EditForm(g.user.nickname)
         form.nickname.data = g.user.nickname
         form.about_me.data = g.user.about_me
         return render_template('edit.html', form=form)
@@ -118,7 +127,7 @@ class UserView(BaseView):
     @route('/edit', methods=['POST'])
     @login_required
     def post(self):
-        form = EditForm()
+        form = EditForm(g.user.nickname)
         if form.validate_on_submit():
             g.user.nickname = form.nickname.data
             g.user.about_me = form.about_me.data
@@ -128,6 +137,48 @@ class UserView(BaseView):
             app.logger.info('edited profile {}'.format(g.user.nickname))
             return redirect(url_for('UserView:get'))
         return render_template('edit.html', form=form)
+
+
+class FollowView(BaseView):
+
+    @login_required
+    def get(self, nickname):
+        user = User.query.filter_by(nickname=nickname).first()
+        if not user:
+            flash('User ' + nickname + ' not found.')
+            return redirect(url_for('IndexView:get'))
+        if user == g.user:
+            flash('You can\'t follow yourself!')
+            return redirect(url_for('UserView:profile_1', nickname=nickname))
+        u = g.user.follow(user)
+        if u is None:
+            flash('Cannot follow ' + nickname + '.')
+            return redirect(url_for('UserView:profile_1', nickname=nickname))
+        db.session.add(u)
+        db.session.commit()
+        flash('You are now following ' + nickname + '!')
+        return redirect(url_for('UserView:profile_1', nickname=nickname))
+
+
+class UnfollowView(BaseView):
+
+    @login_required
+    def get(self, nickname):
+        user = User.query.filter_by(nickname = nickname).first()
+        if not user:
+            flash('User ' + nickname + ' not found.')
+            return redirect(url_for('index'))
+        if user == g.user:
+            flash('You can\'t unfollow yourself!')
+            return redirect(url_for('UserView:profile_1', nickname=nickname))
+        u = g.user.unfollow(user)
+        if u is None:
+            flash('Cannot unfollow ' + nickname + '.')
+            return redirect(url_for('UserView:profile_1', nickname=nickname))
+        db.session.add(u)
+        db.session.commit()
+        flash('You have stopped following ' + nickname + '.')
+        return redirect(url_for('UserView:profile_1', nickname=nickname))
 
 
 @app.errorhandler(404)
