@@ -2,7 +2,7 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
-from nltk.tokenize import word_tokenize
+from nltk import word_tokenize, pos_tag, ne_chunk, tree
 from sqlalchemy import or_
 from forms import LoginForm, EditForm, PostForm
 from flask.ext.classy import FlaskView, route
@@ -254,14 +254,18 @@ class PostsApiView(FlaskView):
 
 
 class SearchTextApiView(FlaskView):
+
     def get(self):
-        search = request.args.get('text', '').lower()
+        search = request.args.get('text', '')
         if not search:
             return jsonify({'error': 'bad parameters'})
+        words = self.parse_text(search)
+        search = '%'+'%'.join(words['text'])+'%'
+        search.lower()
         query = db.session.query(User, Post).join(Post). \
-            filter(or_(Post.title.like('%' + search + '%'),
-                       Post.body.like('%' + search + '%'),
-                       User.nickname.like('%' + search + '%')))
+            filter(or_(Post.title.like(search),
+                       Post.body.like(search),
+                       User.nickname.in_(words['names'])))
         result = []
         for user, post in query.all():
             row = {'author': user.serialize(),
@@ -272,3 +276,15 @@ class SearchTextApiView(FlaskView):
             row['total_count'] = row['author']['count_nickname']+row['post']['count_title']+row['post']['count_body']
             result.append(row)
         return jsonify({'success': sorted(result, key=lambda x: x['total_count'], reverse=True)})
+
+    @staticmethod
+    def parse_text(text):
+
+        tokens = word_tokenize(text)
+        pos = pos_tag(tokens)
+        chunked_nes = ne_chunk(pos)
+        result = {
+            'names': [' '.join(map(lambda x: x[0], ne.leaves())) for ne in chunked_nes if isinstance(ne, tree.Tree)],
+            'text': tokens
+        }
+        return result
