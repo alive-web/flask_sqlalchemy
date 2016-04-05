@@ -1,10 +1,15 @@
 __author__ = 'plevytskyi'
 from hashlib import md5
 
+from sqlalchemy_utils.types import TSVectorType
+from sqlalchemy_searchable import make_searchable
+
 from app import db
 
 ROLE_USER = 0
 ROLE_ADMIN = 1
+
+make_searchable()
 
 followers = db.Table('followers',
                      db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
@@ -13,11 +18,11 @@ followers = db.Table('followers',
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    nickname = db.Column(db.String(64), unique=True)
-    email = db.Column(db.String(120), unique=True)
+    nickname = db.Column(db.Unicode(64), unique=True)
+    email = db.Column(db.Unicode(120), unique=True)
     role = db.Column(db.SmallInteger, default=ROLE_USER)
     posts = db.relationship('Post', backref='author', lazy='dynamic')
-    about_me = db.Column(db.String(140))
+    about_me = db.Column(db.Unicode(140))
     last_seen = db.Column(db.DateTime)
     followed = db.relationship('User',
                                secondary=followers,
@@ -28,7 +33,7 @@ class User(db.Model):
 
     @staticmethod
     def make_unique_nickname(nickname):
-        if User.query.filter_by(nickname = nickname).first() is None:
+        if User.query.filter_by(nickname=nickname).first() is None:
             return nickname
         version = 2
         while True:
@@ -93,10 +98,11 @@ class User(db.Model):
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(40))
-    body = db.Column(db.String(240))
+    title = db.Column(db.Unicode(40))
+    body = db.Column(db.UnicodeText())
     timestamp = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    search_vector = db.Column(TSVectorType('title', 'body', weights={'title': 'A', 'body': 'B'}))
 
     def __repr__(self):
         return '<Post %r>' % self.body

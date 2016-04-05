@@ -2,12 +2,13 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
-from nltk import word_tokenize, pos_tag, ne_chunk, tree
 from sqlalchemy import or_
-from forms import LoginForm, EditForm, PostForm
+from sqlalchemy_searchable import search
 from flask.ext.classy import FlaskView, route
-from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
+from forms import LoginForm, EditForm, PostForm, SearchForm
+from nltk import word_tokenize, pos_tag, ne_chunk, tree
 from flask.ext.login import login_user, logout_user, current_user, login_required
+from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 
 from app import app, db, lm, oid, emails
 from config import POSTS_PER_PAGE
@@ -26,6 +27,7 @@ class BaseView(FlaskView):
             g.user.last_seen = datetime.utcnow()
             db.session.add(g.user)
             db.session.commit()
+            g.search_form = SearchForm()
 
 
 class LoginView(BaseView):
@@ -253,38 +255,14 @@ class PostsApiView(FlaskView):
         return jsonify({'success': [paragraph.serialize() for paragraph in paragraphs]})
 
 
-class SearchTextApiView(FlaskView):
+class SearchTextApiView(BaseView):
 
-    def get(self):
-        search = request.args.get('text', '')
-        if not search:
-            return jsonify({'error': 'bad parameters'})
-        words = self.parse_text(search)
-        search = '%'+'%'.join(words['text'])+'%'
-        search.lower()
-        query = db.session.query(User, Post).join(Post). \
-            filter(or_(Post.title.like(search),
-                       Post.body.like(search),
-                       User.nickname.in_(words['names'])))
-        result = []
-        for user, post in query.all():
-            row = {'author': user.serialize(),
-                   'post': post.serialize()}
-            row['author']['count_nickname'] = len([word for word in word_tokenize(user.nickname) if search == word.lower()])
-            row['post']['count_title'] = len([word for word in word_tokenize(post.title) if search == word.lower()])
-            row['post']['count_body'] = len([word for word in word_tokenize(post.body) if search == word.lower()])
-            row['total_count'] = row['author']['count_nickname']+row['post']['count_title']+row['post']['count_body']
-            result.append(row)
-        return jsonify({'success': sorted(result, key=lambda x: x['total_count'], reverse=True)})
-
-    @staticmethod
-    def parse_text(text):
-
-        tokens = word_tokenize(text)
-        pos = pos_tag(tokens)
-        chunked_nes = ne_chunk(pos)
-        result = {
-            'names': [' '.join(map(lambda x: x[0], ne.leaves())) for ne in chunked_nes if isinstance(ne, tree.Tree)],
-            'text': tokens
-        }
-        return result
+    def post(self):
+        searching_text = request.form.get('search', '')
+        if not searching_text:
+            return redirect(url_for('IndexView:get'))
+        tokens = word_tokenize(searching_text)
+        searching_text = ' or '.join(tokens)
+        query = db.session.query(Post)
+        results = search(query, searching_text, sort=True).all()
+        return render_template('search_results.html', query=searching_text, results=results, user=g.user)

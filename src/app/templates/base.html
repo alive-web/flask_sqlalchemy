@@ -14,6 +14,10 @@
         <a href="{{ url_for('IndexView:get_1') }}">Home</a>
         {% if g.user and g.user.is_authenticated %}
         | <a href="{{ url_for('UserView:profile_1', nickname = g.user.nickname) }}">Your Profile</a>
+        | <form style="display: inline;" action="{{url_for('SearchTextApiView:post')}}" method="post" name="search">
+            {{g.search_form.hidden_tag()}}{{g.search_form.search(size=20)}}
+            <input type="submit" value="Search">
+        </form>
         | <a href="{{ url_for('LogoutView:get') }}">Logout</a>
         {% endif %}
     </div>
