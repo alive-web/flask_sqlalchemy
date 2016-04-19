@@ -3,9 +3,8 @@ __author__ = 'plevytskyi'
 from flask import render_template
 from flask.ext.mail import Message
 
-from app import app, mail
+from app import app, mail, decorators
 from config import ADMINS
-from decorators import async
 
 
 def follower_notification(followed, follower):
@@ -15,7 +14,7 @@ def follower_notification(followed, follower):
                render_template("follower_email.html", user=followed, follower=follower))
 
 
-@async
+@decorators.async
 def send_async_email(msg):
     with app.app_context():
         mail.send(msg)
