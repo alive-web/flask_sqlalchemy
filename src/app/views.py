@@ -4,12 +4,12 @@ from datetime import datetime
 
 from sqlalchemy_searchable import search
 from flask.ext.classy import FlaskView, route
-from forms import LoginForm, EditForm, PostForm, SearchForm
 from nltk import word_tokenize
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 
 from app import app, db, lm, oid, emails
+from app.forms import LoginForm, EditForm, PostForm, SearchForm
 from config import POSTS_PER_PAGE
 from models import User, Post, ROLE_USER
 
