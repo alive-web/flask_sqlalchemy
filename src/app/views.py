@@ -2,11 +2,10 @@ __author__ = 'plevytskyi'
 
 from datetime import datetime
 
-from sqlalchemy import or_
 from sqlalchemy_searchable import search
 from flask.ext.classy import FlaskView, route
 from forms import LoginForm, EditForm, PostForm, SearchForm
-from nltk import word_tokenize, pos_tag, ne_chunk, tree
+from nltk import word_tokenize
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 
@@ -167,7 +166,7 @@ class UnfollowView(BaseView):
 
     @login_required
     def get(self, nickname):
-        user = User.query.filter_by(nickname = nickname).first()
+        user = User.query.filter_by(nickname=nickname).first()
         if not user:
             flash('User ' + nickname + ' not found.')
             return redirect(url_for('index'))
