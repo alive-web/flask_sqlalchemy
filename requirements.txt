@@ -1,3 +1,4 @@
+nltk==3.2
 SQLAlchemy==1.0.12
 SQLAlchemy-searchable==0.10.0
 flask==0.10.1
