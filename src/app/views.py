@@ -8,10 +8,10 @@ from nltk import word_tokenize
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 
-from app import app, db, lm, oid, emails
-from app.forms import LoginForm, EditForm, PostForm, SearchForm
 from config import POSTS_PER_PAGE
-from models import User, Post, ROLE_USER
+from app import app, db, lm, oid, emails
+from app.models import User, Post, ROLE_USER
+from app.forms import LoginForm, EditForm, PostForm, SearchForm
 
 
 @lm.user_loader
