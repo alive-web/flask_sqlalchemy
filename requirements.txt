@@ -1,5 +1,6 @@
 flask==0.10.1
 flask-Classy==0.6.10
 flask-login==0.3.2
+flask-mail==0.9.1
 flask-SQLAlchemy==2.1
 flask-WTF==0.12
