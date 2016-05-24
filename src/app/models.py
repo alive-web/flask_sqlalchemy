@@ -18,6 +18,7 @@ followers = db.Table('followers',
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    social_id = db.Column(db.String(64), unique=True)
     nickname = db.Column(db.Unicode(64), unique=True)
     email = db.Column(db.Unicode(120), unique=True)
     role = db.Column(db.SmallInteger, default=ROLE_USER)

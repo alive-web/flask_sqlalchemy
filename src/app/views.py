@@ -10,6 +10,7 @@ from flask import render_template, flash, redirect, session, url_for, request, g
 
 from config import POSTS_PER_PAGE
 from app import app, db, lm, oid, emails
+from app.oauth import OAuthSignIn
 from app.models import User, Post, ROLE_USER
 from app.forms import LoginForm, EditForm, PostForm, SearchForm
 
@@ -27,6 +28,32 @@ class BaseView(FlaskView):
             db.session.add(g.user)
             db.session.commit()
             g.search_form = SearchForm()
+
+
+class OauthView(BaseView):
+    @route('/authorize/<provider>')
+    def oauth_authorize(self, provider):
+        if not current_user.is_anonymous:
+            return redirect(url_for('index'))
+        oauth = OAuthSignIn.get_provider(provider)
+        return oauth.authorize()
+
+    @route('/callback/<provider>')
+    def oauth_callback(self, provider):
+        if not current_user.is_anonymous:
+            return redirect(url_for('IndexView:get_1'))
+        oauth = OAuthSignIn.get_provider(provider)
+        social_id, username, email = oauth.callback()
+        if social_id is None:
+            flash('Authentication failed.')
+            return redirect(url_for('index'))
+        user = User.query.filter_by(social_id=social_id).first()
+        if not user:
+            user = User(social_id=social_id, nickname=username, email=email)
+            db.session.add(user)
+            db.session.commit()
+        login_user(user, True)
+        return redirect(url_for('IndexView:get_1'))
 
 
 class LoginView(BaseView):
@@ -53,7 +80,7 @@ class LoginView(BaseView):
     def after_login(resp):
         if resp.email is None or resp.email == "":
             flash('Invalid login. Please try again.')
-            return redirect(url_for('login'))
+            return redirect(url_for('LoginView:get'))
         user = User.query.filter_by(email=resp.email).first()
         if user is None:
             nickname = resp.nickname

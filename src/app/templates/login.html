@@ -25,6 +25,9 @@
             <a href="javascript:set_openid('{{pr.url}}', '{{pr.name}}');"><img src="/static/img/{{pr.name.lower()}}.png" class="img-polaroid" style="margin:2px;" /></a>
             {% endfor %}
         </div>
+        <div class="control-group">
+            <a href="{{ url_for('OauthView:oauth_authorize', provider = 'facebook') }}"><img src="/static/img/facebook.png" class="img-polaroid" /></a>
+        </div>
         <div class="control-group{% if form.errors.openid %} error{% endif %}">
             <label class="control-label" for="openid">Or enter your OpenID here:</label>
             <div class="controls">

@@ -1,7 +1,7 @@
 __author__ = 'plevytskyi'
 import os
 
-CSRF_ENABLED = True
+CRF_ENABLED = True
 SECRET_KEY = 'you-will-never-guess'
 
 OPENID_PROVIDERS = [
@@ -11,14 +11,25 @@ OPENID_PROVIDERS = [
     {'name': 'Flickr', 'url': 'http://www.flickr.com/<username>'},
     {'name': 'MyOpenID', 'url': 'https://www.myopenid.com'}]
 
+OAUTH_CREDENTIALS = {
+    'facebook': {
+        'id': '557253961121082',
+        'secret': 'b81d01a22223cba9c4bc375fa6899d88'
+    },
+}
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-DB = 'microblog'
-DB_USER = 'microblog'
-DB_PASSWORD = 'mypass'
+# DB = 'microblog'
+# DB_USER = 'microblog'
+# DB_PASSWORD = 'mypass'
 
-SQLALCHEMY_DATABASE_URI = 'postgresql://' + DB_USER + ':' + DB_PASSWORD + '@localhost/' + DB
+DB = 'd7q24mhem5apdn'
+DB_USER = 'szixouzvokkrwy'
+DB_PASSWORD = 'urLiVIVSntE3v3Vzk6ZgyuNMGj'
+
+# SQLALCHEMY_DATABASE_URI = 'postgresql://' + DB_USER + ':' + DB_PASSWORD + '@localhost/' + DB
+SQLALCHEMY_DATABASE_URI = 'postgresql://' + DB_USER + ':' + DB_PASSWORD + '@ec2-50-17-237-148.compute-1.amazonaws.com:5432/' + DB
 
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
