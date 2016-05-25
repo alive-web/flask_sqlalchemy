@@ -4,6 +4,6 @@ from app import app, db
 
 db.create_all()
 port = os.getenv('PORT', 5000)
-hostname = os.getenv('URL', 'hostname')
+hostname = os.getenv('URL', 'secret-forest-72981.herokuapp.com')
 print('port={}, hostname={}'.format(port, hostname))
-app.run(debug=True, hostname=hostname, port=port)
+app.run(hostname=hostname, port=port, debug=True)
