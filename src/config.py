@@ -28,6 +28,7 @@ DB = 'd7q24mhem5apdn'
 DB_USER = 'szixouzvokkrwy'
 DB_PASSWORD = 'urLiVIVSntE3v3Vzk6ZgyuNMGj'
 
+SQLALCHEMY_TRACK_MODIFICATIONS = False
 # SQLALCHEMY_DATABASE_URI = 'postgresql://' + DB_USER + ':' + DB_PASSWORD + '@localhost/' + DB
 SQLALCHEMY_DATABASE_URI = 'postgresql://' + DB_USER + ':' + DB_PASSWORD + '@ec2-50-17-237-148.compute-1.amazonaws.com:5432/' + DB
 
