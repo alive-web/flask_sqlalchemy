@@ -1,1 +1,1 @@
-web: python test/app.py
+web: python src/run.py
