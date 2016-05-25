@@ -16,11 +16,11 @@ app.config.from_object('config')
 
 mail = Mail(app)
 
-tmp = os.path.join(basedir, '/tmp')
-
-if not os.path.exists(tmp):
-    os.makedirs(tmp)
-file_handler = RotatingFileHandler(os.path.join(tmp, 'microblog.log'), 'a', 1 * 1024 * 1024, 10)
+# tmp = os.path.join(basedir, '/tmp')
+#
+# if not os.path.exists(tmp):
+#     os.makedirs(tmp)
+file_handler = RotatingFileHandler('microblog.log', 'a', 1 * 1024 * 1024, 10)
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
 app.logger.setLevel(logging.INFO)
 file_handler.setLevel(logging.INFO)
