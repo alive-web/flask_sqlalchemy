@@ -20,6 +20,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     social_id = db.Column(db.String(64), unique=True)
     nickname = db.Column(db.Unicode(64), unique=True)
+    full_name = db.Column(db.Unicode(64))
     email = db.Column(db.Unicode(120), unique=True)
     role = db.Column(db.SmallInteger, default=ROLE_USER)
     posts = db.relationship('Post', backref='author', lazy='dynamic')

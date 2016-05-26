@@ -11,7 +11,7 @@ from flask import render_template, flash, redirect, session, url_for, request, g
 from config import POSTS_PER_PAGE
 from app import app, db, lm, oid, emails
 from app.oauth import OAuthSignIn
-from app.models import User, Post, ROLE_USER
+from app.models import User, Post
 from app.forms import LoginForm, EditForm, PostForm, SearchForm
 
 
@@ -21,6 +21,7 @@ def load_user(user_id):
 
 
 class BaseView(FlaskView):
+
     def before_request(self, name, *args, **kwargs):
         g.user = current_user
         if g.user.is_authenticated:
@@ -33,8 +34,8 @@ class BaseView(FlaskView):
 class OauthView(BaseView):
     @route('/authorize/<provider>')
     def oauth_authorize(self, provider):
-        if not current_user.is_anonymous:
-            return redirect(url_for('index'))
+        if g.user is not None and g.user.is_authenticated:
+            return redirect(url_for('IndexView:get_1'))
         oauth = OAuthSignIn.get_provider(provider)
         return oauth.authorize()
 
@@ -43,13 +44,13 @@ class OauthView(BaseView):
         if not current_user.is_anonymous:
             return redirect(url_for('IndexView:get_1'))
         oauth = OAuthSignIn.get_provider(provider)
-        social_id, username, email = oauth.callback()
+        social_id, email, name = oauth.callback()
         if social_id is None:
             flash('Authentication failed.')
-            return redirect(url_for('index'))
+            return redirect(url_for('IndexView:get_1'))
         user = User.query.filter_by(social_id=social_id).first()
         if not user:
-            user = User(social_id=social_id, nickname=username, email=email)
+            user = User(social_id=social_id, full_name=name, email=email)
             db.session.add(user)
             db.session.commit()
         login_user(user, True)
@@ -57,18 +58,16 @@ class OauthView(BaseView):
 
 
 class LoginView(BaseView):
-    @oid.loginhandler
+
     def get(self):
         if g.user is not None and g.user.is_authenticated:
-            return redirect(url_for('IndexView:post'))
+            return redirect(url_for('IndexView:get_1'))
         form = LoginForm()
-        return render_template('login.html', title='Sign In', form=form, providers=app.config['OPENID_PROVIDERS'],
-                               error=oid.fetch_error())
+        return render_template('login.html', title='Sign In', form=form)
 
-    @oid.loginhandler
     def post(self):
         if g.user is not None and g.user.is_authenticated:
-            return redirect(url_for('index'))
+            return redirect(url_for('IndexView:get_1'))
         form = LoginForm()
         if form.validate_on_submit():
             session['remember_me'] = form.remember_me.data
@@ -76,32 +75,9 @@ class LoginView(BaseView):
         return render_template('login.html', title='Sign In', form=form, providers=app.config['OPENID_PROVIDERS'],
                                error=oid.fetch_error())
 
-    @oid.after_login
-    def after_login(resp):
-        if resp.email is None or resp.email == "":
-            flash('Invalid login. Please try again.')
-            return redirect(url_for('LoginView:get'))
-        user = User.query.filter_by(email=resp.email).first()
-        if user is None:
-            nickname = resp.nickname
-            if nickname is None or nickname == "":
-                nickname = resp.email.split('@')[0]
-            nickname = User.make_unique_nickname(nickname)
-            user = User(nickname=nickname, email=resp.email, role=ROLE_USER)
-            db.session.add(user)
-            db.session.commit()
-            # make the user follow him/herself
-            db.session.add(user.follow(user))
-            db.session.commit()
-        remember_me = False
-        if 'remember_me' in session:
-            remember_me = session['remember_me']
-            session.pop('remember_me', None)
-        login_user(user, remember=remember_me)
-        return redirect(request.args.get('next') or url_for('index'))
-
 
 class LogoutView(BaseView):
+
     def get(self):
         app.logger.info('{} log out'.format(g.user.nickname))
         logout_user()
@@ -134,12 +110,12 @@ class IndexView(BaseView):
 
 
 class UserView(BaseView):
-    @route('/<nickname>')
-    @route('/<nickname>/<int:page>')
-    def profile(self, nickname, page=1):
-        user = User.query.filter_by(nickname=nickname).first()
+    @route('/<int:user_id>')
+    @route('/<int:user_id>/<int:page>')
+    def profile(self, user_id, page=1):
+        user = User.query.filter_by(id=user_id).first()
         if not user:
-            flash('User ' + nickname + ' not found.')
+            flash('User with id ' + user_id + ' not found.')
             return redirect(url_for('IndexView:get_1'))
         posts = user.posts.paginate(page, POSTS_PER_PAGE, False)
         return render_template('user.html', user=user, posts=posts)
@@ -170,44 +146,44 @@ class UserView(BaseView):
 class FollowView(BaseView):
 
     @login_required
-    def get(self, nickname):
-        user = User.query.filter_by(nickname=nickname).first()
+    def get(self, user_id):
+        user = User.query.filter_by(id=user_id).first()
         emails.follower_notification(user, g.user)
         if not user:
-            flash('User ' + nickname + ' not found.')
+            flash('User ' + user.nickname + ' not found.')
             return redirect(url_for('IndexView:get'))
         if user == g.user:
             flash('You can\'t follow yourself!')
-            return redirect(url_for('UserView:profile_1', nickname=nickname))
+            return redirect(url_for('UserView:profile_1', id=user_id))
         u = g.user.follow(user)
         if u is None:
-            flash('Cannot follow ' + nickname + '.')
-            return redirect(url_for('UserView:profile_1', nickname=nickname))
+            flash('Cannot follow ' + user.nickname + '.')
+            return redirect(url_for('UserView:profile_1', id=user_id))
         db.session.add(u)
         db.session.commit()
-        flash('You are now following ' + nickname + '!')
-        return redirect(url_for('UserView:profile_1', nickname=nickname))
+        flash('You are now following ' + user.nickname + '!')
+        return redirect(url_for('UserView:profile_1', id=user_id))
 
 
 class UnfollowView(BaseView):
 
     @login_required
-    def get(self, nickname):
-        user = User.query.filter_by(nickname=nickname).first()
+    def get(self, user_id):
+        user = User.query.filter_by(id=user_id).first()
         if not user:
-            flash('User ' + nickname + ' not found.')
+            flash('User ' + user.nickname + ' not found.')
             return redirect(url_for('index'))
         if user == g.user:
             flash('You can\'t unfollow yourself!')
-            return redirect(url_for('UserView:profile_1', nickname=nickname))
+            return redirect(url_for('UserView:id_1', id=user_id))
         u = g.user.unfollow(user)
         if u is None:
-            flash('Cannot unfollow ' + nickname + '.')
-            return redirect(url_for('UserView:profile_1', nickname=nickname))
+            flash('Cannot unfollow ' + user.nickname + '.')
+            return redirect(url_for('UserView:id_1', id=user_id))
         db.session.add(u)
         db.session.commit()
-        flash('You have stopped following ' + nickname + '.')
-        return redirect(url_for('UserView:profile_1', nickname=nickname))
+        flash('You have stopped following ' + user.nickname + '.')
+        return redirect(url_for('UserView:profile_1', id=user_id))
 
 
 @app.errorhandler(404)
@@ -286,7 +262,7 @@ class SearchTextApiView(BaseView):
     def post(self):
         searching_text = request.form.get('search', '')
         if not searching_text:
-            return redirect(url_for('IndexView:get'))
+            return redirect(url_for('IndexView:get_1'))
         tokens = word_tokenize(searching_text)
         searching_text = ' or '.join(tokens)
         query = db.session.query(Post)

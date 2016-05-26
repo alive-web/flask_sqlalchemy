@@ -2,7 +2,6 @@
 
 # Virtualenv
 venv/
-
 src/db_repository/
 src/tmp/
 *.db

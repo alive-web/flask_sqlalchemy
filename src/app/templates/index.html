@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Hi, {{ g.user.nickname }}!</h1>
+  <h1>Hi, {% if g.user.nickname %}{{ g.user.nickname }}{% else %}{{ g.user.full_name }}{% endif %}!</h1>
   <form action="{{ url_for('IndexView:post') }}" method="post" name="post">
       {{ form.hidden_tag() }}
       <table>

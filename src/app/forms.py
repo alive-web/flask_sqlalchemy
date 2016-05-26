@@ -1,9 +1,33 @@
 __author__ = 'plevytskyi'
 from flask.ext.wtf import Form
-from wtforms import BooleanField, TextAreaField, StringField
+from wtforms import BooleanField, TextAreaField, StringField, PasswordField, SubmitField
 from wtforms.validators import Length, DataRequired
 
 from app.models import User
+
+
+class LoginForm(Form):
+    nickname = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('remember_me', default=False)
+
+    def __init__(self, *args, **kwargs):
+        Form.__init__(self, *args, **kwargs)
+        self.user = None
+
+    def validate(self):
+        rv = Form.validate(self)
+        if not rv:
+            return False
+
+        user = User.query.filter_by(
+            nickname=self.nickname.data).first()
+        if user is None or not hasattr(user, 'check_password') or not user.check_password(self.password.data):
+            self.nickname.errors.append('Wrong name or password')
+            return False
+
+        self.user = user
+        return True
 
 
 class EditForm(Form):
@@ -24,11 +48,6 @@ class EditForm(Form):
             self.nickname.errors.append('This nickname is already in use. Please choose another one.')
             return False
         return True
-
-
-class LoginForm(Form):
-    openid = StringField('openid', validators=[DataRequired()])
-    remember_me = BooleanField('remember_me', default=False)
 
 
 class PostForm(Form):

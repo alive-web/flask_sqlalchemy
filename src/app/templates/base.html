@@ -1,36 +1,70 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
+    <script src="/static/jquery/jquery-2.2.4.min.js"></script>
     <link href="/static/twbs-bootstrap-7cbd9a1/dist/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <script src="/static/twbs-bootstrap-7cbd9a1/dist/js/bootstrap.min.js"></script>
+    <link href="/static/font-awesome-4.6.3/css/font-awesome.min.css" rel="stylesheet" media="screen">
+    <link href="/static/css/main.css" rel="stylesheet" media="screen">
     {% if title %}
       <title>{{title}} - microblog</title>
     {% else %}
       <title>microblog</title>
     {% endif %}
-  </head>
-  <body>
-    <div>Microblog:
-        <a href="{{ url_for('IndexView:get_1') }}">Home</a>
-        {% if g.user and g.user.is_authenticated %}
-        | <a href="{{ url_for('UserView:profile_1', nickname = g.user.nickname) }}">Your Profile</a>
-        | <form style="display: inline;" action="{{url_for('SearchTextApiView:post')}}" method="post" name="search">
-            {{g.search_form.hidden_tag()}}{{g.search_form.search(size=20)}}
-            <input type="submit" value="Search">
-        </form>
-        | <a href="{{ url_for('LogoutView:get') }}">Logout</a>
+</head>
+<body>
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="{{ url_for('IndexView:get_1') }}">Home</a>
+      </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        {%  if g.user and g.user.is_authenticated %}
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="{{ url_for('UserView:profile_1', user_id = g.user.id) }}">Your Profile</a>
+                </li>
+                <li>
+                    <form class="navbar-form" role="search" action="{{url_for('SearchTextApiView:post')}}" method="post" name="search">
+                        <div class="input-group">
+                            {{g.search_form.hidden_tag()}}
+                            <input type="text" class="form-control" placeholder="Search" name="{{ g.search_form.search.name }}">
+                            <div class="input-group-btn">
+                                <button class="btn btn-default" type="submit">
+                                    <i class="glyphicon glyphicon-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </li>
+            </ul>
         {% endif %}
-    </div>
-    <hr>
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }} </li>
-          {% endfor %}
+        <ul class="nav navbar-nav navbar-right">
+            {% if g.user and g.user.is_authenticated %}
+            <li>
+                <a href="{{ url_for('LogoutView:get') }}?next=/"class="glyphicon glyphicon-log-out">
+                    SignOut ({% if g.user.nickname %}{{ g.user.nickname }}{% else %}{{ g.user.full_name }}{% endif %})
+                </a>
+            </li>
+            {% endif %}
         </ul>
-      {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </body>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="jumbotron">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <ul>
+            {% for message in messages %}
+              <li>{{ message }} </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</body>
 </html>

@@ -1,5 +1,5 @@
 __author__ = 'plevytskyi'
-from rauth import OAuth1Service, OAuth2Service
+from rauth import OAuth2Service
 from flask import current_app, url_for, request, redirect, session
 
 
@@ -59,11 +59,5 @@ class FacebookSignIn(OAuthSignIn):
                   'grant_type': 'authorization_code',
                   'redirect_uri': self.get_callback_url()}
         )
-        me = oauth_session.get('me?fields=id,email').json()
-        return (
-            'facebook$' + me['id'],
-            me.get('email').split('@')[0],  # Facebook does not provide
-                                            # username, so the email's user
-                                            # is used instead
-            me.get('email')
-        )
+        me = oauth_session.get('me?fields=id,email,name').json()
+        return me.get('id'), me.get('email'), me.get('name')
