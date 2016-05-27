@@ -5,6 +5,7 @@ from app import views
 
 views.IndexView.register(app, route_base='/')
 views.LoginView.register(app, route_base='/login')
+views.RegistrationView.register(app, route_base='/registration')
 views.LogoutView.register(app, route_base='/logout')
 views.UserView.register(app, route_base='/profile')
 views.FollowView.register(app, route_base='/follow/<int:user_id>')

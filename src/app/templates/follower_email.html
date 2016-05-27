@@ -1,10 +1,10 @@
-<p>Dear {{user.nickname}},</p>
-<p><a href="{{url_for('UserView:profile_1', id = follower.id, _external = True)}}">{{follower.nickname}}</a> is now a follower.</p>
+<p>Dear {% if user.nickname %}{{ user.nickname }}{% else %}{{ user.full_name }}{% endif %},</p>
+<p><a href="{{url_for('UserView:profile_1', user_id = follower.id, _external = True)}}">{% if follower.nickname %}{{ follower.nickname }}{% else %}{{ follower.full_name }}{% endif %}</a> is now a follower.</p>
 <table>
     <tr valign="top">
         <td><img src=""></td>
         <td>
-            <a href="{{url_for('UserView:profile_1', nickname = follower.id, _external = True)}}">{{follower.nickname}}</a><br />
+            <a href="{{url_for('UserView:profile_1', user_id = follower.id, _external = True)}}">{% if follower.nickname %}{{ follower.nickname }}{% else %}{{ follower.full_name }}{% endif %}</a><br />
             {{follower.about_me}}
         </td>
     </tr>

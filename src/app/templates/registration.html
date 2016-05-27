@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+<div class="row">
+    <div class="well col-md-4 col-md-offset-4">
+        <h3 class="text-center">Registration</h3>
+        <form class="form form-horizontal" method="post" role="form">
+            {% if error %}<p class="error"><strong>Error:</strong> {{ error }}</p>{% endif %}
+            {{ form.hidden_tag() }}
+            {{ wtf.form_errors(form, hiddens="only") }}
+            {{ wtf.form_field(form.nickname) }}
+            {{ wtf.form_field(form.password) }}
+            {{ wtf.form_field(form.confirm) }}
+            <div class="control-group">
+                <input class="btn btn-primary btn-block" type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

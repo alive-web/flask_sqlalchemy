@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 from flask import Flask
 from flask_bootstrap import Bootstrap
+from flask.ext.bcrypt import Bcrypt
 from flask.ext.mail import Mail
 from flask.ext.openid import OpenID
 from flask.ext.login import LoginManager
@@ -12,9 +13,12 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from config import basedir
 
 
+
 app = Flask(__name__)
 app.config.from_object('config')
 Bootstrap(app)
+
+bcrypt = Bcrypt(app)
 
 mail = Mail(app)
 

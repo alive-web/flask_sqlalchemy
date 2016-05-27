@@ -3,8 +3,9 @@ from hashlib import md5
 
 from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy_searchable import make_searchable
+from flask_login import UserMixin
 
-from app import db
+from app import db, bcrypt
 
 ROLE_USER = 0
 ROLE_ADMIN = 1
@@ -16,10 +17,18 @@ followers = db.Table('followers',
                      db.Column('followed_id', db.Integer, db.ForeignKey('user.id')))
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
+
+    def __init__(self, *args, **kwargs):
+        super(User, self).__init__(*args, **kwargs)
+        password = kwargs.get('password', '')
+        if password:
+            self.password = self.get_hash(password)
+
     id = db.Column(db.Integer, primary_key=True)
     social_id = db.Column(db.String(64), unique=True)
     nickname = db.Column(db.Unicode(64), unique=True)
+    password = db.Column(db.Unicode(64))
     full_name = db.Column(db.Unicode(64))
     email = db.Column(db.Unicode(120), unique=True)
     role = db.Column(db.SmallInteger, default=ROLE_USER)
@@ -33,17 +42,11 @@ class User(db.Model):
                                backref=db.backref('followers', lazy='dynamic'),
                                lazy='dynamic')
 
-    @staticmethod
-    def make_unique_nickname(nickname):
-        if User.query.filter_by(nickname=nickname).first() is None:
-            return nickname
-        version = 2
-        while True:
-            new_nickname = nickname + str(version)
-            if User.query.filter_by(nickname=new_nickname).first() is None:
-                break
-            version += 1
-        return new_nickname
+    def get_hash(self, password):
+        return bcrypt.generate_password_hash(password)
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
 
     def followed_posts(self):
         return Post.query.join(followers, (followers.c.followed_id == Post.user_id)).\
@@ -73,26 +76,9 @@ class User(db.Model):
     def serialize_posts(self):
         return [item.serialize() for item in self.posts.all()]
 
-    @property
-    def is_authenticated(self):
-        return True
-
-    @property
-    def is_active(self):
-        return True
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        try:
-            return unicode(self.id) # python 2
-        except NameError:
-            return str(self.id) # python 3
-
     def avatar(self, size):
-        return 'http://www.gravatar.com/avatar/' + md5(self.email).hexdigest() + '?d=mm&s=' + str(size)
+        email = self.email or ''
+        return 'http://www.gravatar.com/avatar/' + md5(email).hexdigest() + '?d=mm&s=' + str(size)
 
     def __repr__(self):
         return '<User %r>' % self.nickname

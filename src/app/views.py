@@ -9,10 +9,10 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
 
 from config import POSTS_PER_PAGE
-from app import app, db, lm, oid, emails
+from app import app, db, lm, emails
 from app.oauth import OAuthSignIn
 from app.models import User, Post
-from app.forms import LoginForm, EditForm, PostForm, SearchForm
+from app.forms import RegistrationForm, LoginForm, EditForm, PostForm, SearchForm
 
 
 @lm.user_loader
@@ -53,6 +53,9 @@ class OauthView(BaseView):
             user = User(social_id=social_id, full_name=name, email=email)
             db.session.add(user)
             db.session.commit()
+            # make the user follow him/herself
+            db.session.add(user.follow(user))
+            db.session.commit()
         login_user(user, True)
         return redirect(url_for('IndexView:get_1'))
 
@@ -70,10 +73,28 @@ class LoginView(BaseView):
             return redirect(url_for('IndexView:get_1'))
         form = LoginForm()
         if form.validate_on_submit():
-            session['remember_me'] = form.remember_me.data
-            return oid.try_login(form.openid.data, ask_for=['nickname', 'email'])
-        return render_template('login.html', title='Sign In', form=form, providers=app.config['OPENID_PROVIDERS'],
-                               error=oid.fetch_error())
+            login_user(form.user, True)
+            return redirect(url_for('IndexView:get_1'))
+        return render_template('login.html', title='Sign In', form=form)
+
+
+class RegistrationView(BaseView):
+
+    def get(self):
+        if g.user is not None and g.user.is_authenticated:
+            return redirect(url_for('IndexView:get_1'))
+        form = RegistrationForm()
+        return render_template('registration.html', title='Sign In', form=form)
+
+    def post(self):
+        if g.user is not None and g.user.is_authenticated:
+            return redirect(url_for('IndexView:get_1'))
+        form = RegistrationForm(request.form)
+        if form.validate_on_submit():
+            form.save()
+            login_user(form.user, True)
+            return redirect(url_for('IndexView:get_1'))
+        return render_template('registration.html', title='Sign In', form=form)
 
 
 class LogoutView(BaseView):
@@ -154,15 +175,15 @@ class FollowView(BaseView):
             return redirect(url_for('IndexView:get'))
         if user == g.user:
             flash('You can\'t follow yourself!')
-            return redirect(url_for('UserView:profile_1', id=user_id))
+            return redirect(url_for('UserView:profile_1', user_id=user.id))
         u = g.user.follow(user)
         if u is None:
             flash('Cannot follow ' + user.nickname + '.')
-            return redirect(url_for('UserView:profile_1', id=user_id))
+            return redirect(url_for('UserView:profile_1', user_id=user.id))
         db.session.add(u)
         db.session.commit()
         flash('You are now following ' + user.nickname + '!')
-        return redirect(url_for('UserView:profile_1', id=user_id))
+        return redirect(url_for('UserView:profile_1', user_id=user.id))
 
 
 class UnfollowView(BaseView):
@@ -175,15 +196,15 @@ class UnfollowView(BaseView):
             return redirect(url_for('index'))
         if user == g.user:
             flash('You can\'t unfollow yourself!')
-            return redirect(url_for('UserView:id_1', id=user_id))
+            return redirect(url_for('UserView:id_1', user_id=user.id))
         u = g.user.unfollow(user)
         if u is None:
             flash('Cannot unfollow ' + user.nickname + '.')
-            return redirect(url_for('UserView:id_1', id=user_id))
+            return redirect(url_for('UserView:id_1', user_id=user.id))
         db.session.add(u)
         db.session.commit()
         flash('You have stopped following ' + user.nickname + '.')
-        return redirect(url_for('UserView:profile_1', id=user_id))
+        return redirect(url_for('UserView:profile_1', user_id=user.id))
 
 
 @app.errorhandler(404)

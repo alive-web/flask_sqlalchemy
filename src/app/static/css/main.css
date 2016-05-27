@@ -11,6 +11,11 @@
     background-color: #2D4578;
     border-color: #204d74;
 }
+
+p.help-block{
+    font-size: 12px;
+}
+
 body {
   min-height: 2000px;
   padding-top: 70px;

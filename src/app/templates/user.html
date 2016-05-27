@@ -13,9 +13,9 @@
             {% if user.id == g.user.id %}
                 <a href="{{url_for('UserView:get')}}">Edit your profile</a>
             {% elif not g.user.is_following(user) %}
-                <a href="{{url_for('FollowView:get', id = user.id)}}">Follow</a>
+                <a href="{{url_for('FollowView:get', user_id = user.id)}}">Follow</a>
             {% else %}
-                <a href="{{url_for('UnfollowView:get', id = user.id)}}">Unfollow</a>
+                <a href="{{url_for('UnfollowView:get', user_id = user.id)}}">Unfollow</a>
             {% endif %}
             </p>
         </td>
@@ -25,6 +25,6 @@
 {% for post in posts.items %}
     {% include 'post.html' %}
 {% endfor %}
-{% if posts.has_prev %}<a href="{{ url_for('UserView:id_0', id = user.id, page = posts.prev_num) }}"><< Newer posts</a>{% else %}<< Newer posts{% endif %} |
-{% if posts.has_next %}<a href="{{ url_for('UserView:id_0', id = user.id, page = posts.next_num) }}">Older posts >></a>{% else %}Older posts >>{% endif %}
+{% if posts.has_prev %}<a href="{{ url_for('UserView:id_0', user_id = user.id, page = posts.prev_num) }}"><< Newer posts</a>{% else %}<< Newer posts{% endif %} |
+{% if posts.has_next %}<a href="{{ url_for('UserView:id_0', user_id = user.id, page = posts.next_num) }}">Older posts >></a>{% else %}Older posts >>{% endif %}
 {% endblock %}
