@@ -4,6 +4,7 @@ rauth==0.7.2
 SQLAlchemy==1.0.12
 SQLAlchemy-searchable==0.10.0
 flask==0.10.1
+Flask-Bcrypt==0.7.1
 flask-Bootstrap==3.3.6.0
 flask-Classy==0.6.10
 flask-login==0.3.2
