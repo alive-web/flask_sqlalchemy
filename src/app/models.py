@@ -5,7 +5,7 @@ from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy_searchable import make_searchable
 from flask_login import UserMixin
 
-from app import db, bcrypt
+from app import db
 
 ROLE_USER = 0
 ROLE_ADMIN = 1
@@ -42,11 +42,12 @@ class User(UserMixin, db.Model):
                                backref=db.backref('followers', lazy='dynamic'),
                                lazy='dynamic')
 
+    # FIXME: Change coding password
     def get_hash(self, password):
-        return bcrypt.generate_password_hash(password)
+        return md5(password).hexdigest()
 
     def check_password(self, password):
-        return bcrypt.check_password_hash(self.password, password)
+        return md5(password).hexdigest() == self.password
 
     def followed_posts(self):
         return Post.query.join(followers, (followers.c.followed_id == Post.user_id)).\
