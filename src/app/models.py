@@ -4,6 +4,7 @@ from hashlib import md5
 from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy_searchable import make_searchable
 from flask_login import UserMixin
+from sqlalchemy_utils import URLType
 
 from app import db
 
@@ -34,6 +35,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.SmallInteger, default=ROLE_USER)
     posts = db.relationship('Post', backref='author', lazy='dynamic')
     about_me = db.Column(db.Unicode(140))
+    picture = db.Column(URLType())
     last_seen = db.Column(db.DateTime)
     followed = db.relationship('User',
                                secondary=followers,

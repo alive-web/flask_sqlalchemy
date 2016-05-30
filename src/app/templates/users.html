@@ -1,0 +1,44 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th>Photo</th>
+      <th>Nick</th>
+      <th>Full Name</th>
+      <th>About</th>
+      <th>follow</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr class='clickable-row' data-href="{{ url_for('UserView:profile', user_id = user.id) }}">
+      <td><img src="{% if user.picture %}{{user.picture}}{% else %}/static/pictures/no-avatar.png{% endif %}"></td>
+      <td>{{user.nickname}}</td>
+      <td>{{user.full_name}}</td>
+      <td>{{user.about_me}}</td>
+      <td>
+          {% if g.user.is_following(user) %}
+            <input type="checkbox" checked disabled>
+          {% else %}
+            <input type="checkbox" disabled>
+          {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<script>
+    jQuery(document).ready(function($) {
+        $(".clickable-row").click(function() {
+            window.document.location = $(this).data("href");
+        });
+    });
+</script>
+
+
+{% endblock %}

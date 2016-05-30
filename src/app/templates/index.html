@@ -1,44 +1,36 @@
 {% extends "base.html" %}
+
+{% import "bootstrap/wtf.html" as wtf %}
+{% from "bootstrap/pagination.html" import render_pagination %}
+
 {% block content %}
   <h1>Hi, {% if g.user.nickname %}{{ g.user.nickname }}{% else %}{{ g.user.full_name }}{% endif %}!</h1>
-  <form action="{{ url_for('IndexView:post') }}" method="post" name="post">
-      {{ form.hidden_tag() }}
-      <table>
-          <tr>
-              <td>Say something:</td>
-          </tr>
-          <tr>
-              <td>title</td>
-              <td>{{ form.title(size=10, maxlength=40) }}</td>
-              <td>body</td>
-              <td>{{ form.post(size=30) }}</td>
-          </tr>
-          <tr>
-              <td></td>
-              <td>
-                  {% if form.title.errors %}
-                      <span style="color: red;">{{ form.title.errors }}</span>
-                  {% endif %}
-              </td>
-              <td></td>
-              <td>
-                  {% if form.post.errors %}
-                      <span style="color: red;">{{ form.post.errors }}</span>
-                  {% endif %}
-              </td>
-          </tr>
-          <tr>
-              <td></td>
-              <td><input type="submit" value="Post!"></td>
-              <td></td>
-          </tr>
-      </table>
-  </form>
+  <div class="row">
+    <div class="col-md-4">
+        <h5>Say something:</h5>
+        <form class="form" action="{{ url_for('IndexView:post') }}" method="post" role="form">
+            {% if error %}<p class="error"><strong>Error:</strong> {{ error }}</p>{% endif %}
+            {{ form.hidden_tag() }}
+            {{ wtf.form_errors(form, hiddens="only") }}
+            {{ wtf.form_field(form.title) }}
+            {{ wtf.form_field(form.post) }}
+
+            <div class="control-group">
+                <input class="btn btn-primary" type="submit" value="Post">
+            </div>
+        </form>
+    </div>
+  </div>
   {% for post in posts.items %}
-      <p>
-          {% include 'post.html' %}
-      </p>
+      <div class="row">
+          <div class="col-md-12">
+              {% include 'post.html' %}
+          </div>
+
+      </div>
   {% endfor %}
-  {% if posts.has_prev %}<a href="{{ url_for('IndexView:get_0', page = posts.prev_num) }}"><< Newer posts</a>{% else %}<< Newer posts{% endif %} |
-  {% if posts.has_next %}<a href="{{ url_for('IndexView:get_0', page = posts.next_num) }}">Older posts >></a>{% else %}Older posts >>{% endif %}
+
+
+
+  {{render_pagination(posts)}}
 {% endblock %}

@@ -1,10 +1,10 @@
 <table>
-    <tr valign="top">
+    <tr valign="center">
         <td>
-            <img src="{{post.author.avatar(50)}}">
+            <img src="{% if post.author.picture %}{{post.author.picture}}{% else %}/static/pictures/no-avatar.png{% endif %}">
         </td>
         <td>
-            <i>{{post.author.nickname}}</i><br>
+            <i>{% if post.author.nickname %}{{ post.author.nickname }}{% else %}{{ post.author.full_name }}{% endif %}</i><br>
             <i>title:</i>{{post.title}}<br>
             <i>body:</i>{{post.body}}
         </td>

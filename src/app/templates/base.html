@@ -16,13 +16,16 @@
   <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container">
       <div class="navbar-header">
-        <a class="navbar-brand" href="{{ url_for('IndexView:get_1') }}">Home</a>
+        <a class="navbar-brand" href="{{ url_for('IndexView:get_0') }}">Home</a>
       </div>
       <div id="navbar" class="navbar-collapse collapse">
         {%  if g.user and g.user.is_authenticated %}
             <ul class="nav navbar-nav">
                 <li>
-                    <a href="{{ url_for('UserView:profile_1', user_id = g.user.id) }}">Your Profile</a>
+                    <a href="{{ url_for('UserView:profile', user_id = g.user.id) }}">Your Profile</a>
+                </li>
+                <li>
+                    <a href="{{ url_for('UsersView:get') }}">Users</a>
                 </li>
                 <li>
                     <form class="navbar-form" role="search" action="{{url_for('SearchTextApiView:post')}}" method="post" name="search">
