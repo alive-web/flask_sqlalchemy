@@ -1,6 +1,7 @@
 __author__ = 'plevytskyi'
 from hashlib import md5
 
+import sqlalchemy
 from sqlalchemy_utils.types import TSVectorType
 from sqlalchemy_searchable import make_searchable
 from flask_login import UserMixin
@@ -106,3 +107,5 @@ class Post(db.Model):
             'body': self.body,
             'created': self.timestamp
         }
+
+sqlalchemy.orm.configure_mappers()

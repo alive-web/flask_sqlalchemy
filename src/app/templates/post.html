@@ -1,12 +1,18 @@
-<table>
-    <tr valign="center">
-        <td>
-            <img src="{% if post.author.picture %}{{post.author.picture}}{% else %}/static/pictures/no-avatar.png{% endif %}">
-        </td>
-        <td>
-            <i>{% if post.author.nickname %}{{ post.author.nickname }}{% else %}{{ post.author.full_name }}{% endif %}</i><br>
-            <i>title:</i>{{post.title}}<br>
-            <i>body:</i>{{post.body}}
-        </td>
-    </tr>
-</table>
+<div class="row">
+    <div class="col-md-1"><img
+            src="{% if post.author.picture %}{{post.author.picture}}{% else %}/static/pictures/no-avatar.png{% endif %}">
+    </div>
+    <div class="col-md-11">
+        <i>{% if post.author.nickname %}{{ post.author.nickname }}{% else %}{{ post.author.full_name }}{% endif %}</i><br>
+        <p>
+            <i>Title: </i>{{post.title}}
+        </p>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <p>
+            <i>Body: </i>{{post.body}}
+        </p>
+    </div>
+</div>

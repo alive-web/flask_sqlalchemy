@@ -22,7 +22,7 @@
             {% elif not g.user.is_following(user) %}
                 <a href="{{url_for('FollowView:get', user_id = user.id)}}">Follow</a>
             {% else %}
-                <a href="{{url_for('UnfollowView:get', user_id = user.id)}}">Unfollow</a>
+                <a href="{{url_for('UnFollowView:get', user_id = user.id)}}">Un follow</a>
             {% endif %}
             </p>
         </td>

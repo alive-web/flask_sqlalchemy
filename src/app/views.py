@@ -136,7 +136,7 @@ class UserView(BaseView):
         page = int(request.args.get('page', 1))
         user = User.query.filter_by(id=user_id).first()
         if not user:
-            flash('User with id ' + user_id + ' not found.')
+            flash('User with id {} not found.'.format(user_id))
             return redirect(url_for('IndexView:get_0'))
         posts = user.posts.paginate(page, POSTS_PER_PAGE, False)
         return render_template('user.html', user=user, posts=posts)
@@ -177,24 +177,42 @@ class FollowView(BaseView):
     @login_required
     def get(self, user_id):
         user = User.query.filter_by(id=user_id).first()
-        emails.follower_notification(user, g.user)
         if not user:
             flash('User ' + user.nickname + ' not found.')
             return redirect(url_for('IndexView:get_0'))
-        if user == g.user:
-            flash('You can\'t follow yourself!')
-            return redirect(url_for('UserView:profile', user_id=user.id))
+        # if user == g.user:
+        #     flash('You can\'t follow yourself!')
+        #     return redirect(url_for('UserView:profile', user_id=user.id))
         u = g.user.follow(user)
         if u is None:
             flash('Cannot follow ' + user.nickname + '.')
             return redirect(url_for('UserView:profile', user_id=user.id))
+        emails.follower_notification(user, g.user)
         db.session.add(u)
         db.session.commit()
-        flash('You are now following ' + user.nickname + '!')
+        name = user.nickname or user.full_name
+        flash('You are now following ' + name + '!')
         return redirect(url_for('UserView:profile', user_id=user.id))
 
+    @login_required
+    def post(self, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        emails.follower_notification(user, g.user)
+        if not user:
+            data = {"error": "Can't find user with id {}".format(user_id),
+                    "is_follow": False}
 
-class UnfollowView(BaseView):
+        else:
+            u = g.user.follow(user)
+            emails.follower_notification(user, g.user)
+            db.session.add(u)
+            db.session.commit()
+            data = {"success": "You are follow the user with id {}".format(user_id),
+                    "is_follow": g.user.is_following(user)}
+        return jsonify(**data)
+
+
+class UnFollowView(BaseView):
 
     @login_required
     def get(self, user_id):
@@ -202,17 +220,33 @@ class UnfollowView(BaseView):
         if not user:
             flash('User ' + user.nickname + ' not found.')
             return redirect(url_for('index'))
-        if user == g.user:
-            flash('You can\'t unfollow yourself!')
-            return redirect(url_for('UserView:id_1', user_id=user.id))
+        # if user == g.user:
+        #     flash('You can\'t unfollow yourself!')
+        #     return redirect(url_for('UserView:id_1', user_id=user.id))
         u = g.user.unfollow(user)
         if u is None:
             flash('Cannot unfollow ' + user.nickname + '.')
             return redirect(url_for('UserView:id_1', user_id=user.id))
         db.session.add(u)
         db.session.commit()
-        flash('You have stopped following ' + user.nickname + '.')
+        name = user.nickname or user.full_name
+        flash('You have stopped following ' + name + '.')
         return redirect(url_for('UserView:profile', user_id=user.id))
+
+    @login_required
+    def post(self, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            data = {"error": "Can't find user with id {}".format(user_id),
+                    "is_follow": False}
+
+        else:
+            u = g.user.unfollow(user)
+            db.session.add(u)
+            db.session.commit()
+            data = {"success": "You aren't following the user with ID {}".format(user_id),
+                    "is_follow": g.user.is_following(user)}
+        return jsonify(**data)
 
 
 @app.errorhandler(404)

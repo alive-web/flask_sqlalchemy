@@ -16,17 +16,18 @@
   </thead>
   <tbody>
     {% for user in users %}
-    <tr class='clickable-row' data-href="{{ url_for('UserView:profile', user_id = user.id) }}">
+    <tr>
       <td><img src="{% if user.picture %}{{user.picture}}{% else %}/static/pictures/no-avatar.png{% endif %}"></td>
       <td>{{user.nickname}}</td>
       <td>{{user.full_name}}</td>
       <td>{{user.about_me}}</td>
       <td>
-          {% if g.user.is_following(user) %}
-            <input type="checkbox" checked disabled>
-          {% else %}
-            <input type="checkbox" disabled>
-          {% endif %}
+          <input type="checkbox" {% if g.user.is_following(user) %}checked{% endif %}
+                  class='clickable-checkbox'
+                  value="{{ user.id }}"
+                  data-href-follow="{{url_for('FollowView:post', user_id = user.id )}}"
+                  data-href-un-follow="{{url_for('UnFollowView:post', user_id = user.id )}}"
+                  >
       </td>
     </tr>
     {% endfor %}
@@ -34,8 +35,29 @@
 </table>
 <script>
     jQuery(document).ready(function($) {
-        $(".clickable-row").click(function() {
-            window.document.location = $(this).data("href");
+        $(".clickable-checkbox").change(function() {
+            var el = $(this);
+            userId = el.val();
+            followUrl = el.is(':checked') ? el.data('href-follow') :  el.data('href-un-follow');
+            $.ajax({
+                type: "POST",
+                url: followUrl
+            }).done(function(response) {
+                if (response['success']){
+                    $.notify({
+                        message: response['success']
+                    },{
+                        type: 'success'
+                    });
+                } else if (response['error']) {
+                    $.notify({
+                        message: response['error']
+                    },{
+                        type: 'danger'
+                    });
+                }
+                el.prop("checked", response['is_follow'])
+            });
         });
     });
 </script>

@@ -14,13 +14,13 @@
             {{ wtf.form_errors(form, hiddens="only") }}
             {{ wtf.form_field(form.title) }}
             {{ wtf.form_field(form.post) }}
-
             <div class="control-group">
                 <input class="btn btn-primary" type="submit" value="Post">
             </div>
         </form>
     </div>
   </div>
+  <hr/>
   {% for post in posts.items %}
       <div class="row">
           <div class="col-md-12">
