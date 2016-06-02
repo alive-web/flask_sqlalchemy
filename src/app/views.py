@@ -4,9 +4,8 @@ from datetime import datetime
 
 from sqlalchemy_searchable import search
 from flask.ext.classy import FlaskView, route
-from nltk import word_tokenize
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from flask import render_template, flash, redirect, session, url_for, request, g, jsonify
+from flask import render_template, flash, redirect, url_for, request, g, jsonify
 
 from config import POSTS_PER_PAGE
 from app import app, db, lm, emails
@@ -315,6 +314,7 @@ class ParagraphApiView(FlaskView):
 
 
 class PostsApiView(FlaskView):
+
     def get(self):
         paragraphs = Post.query.all()
         return jsonify({'success': [paragraph.serialize() for paragraph in paragraphs]})
@@ -322,12 +322,11 @@ class PostsApiView(FlaskView):
 
 class SearchTextApiView(BaseView):
 
+    @login_required
     def post(self):
         searching_text = request.form.get('search', '')
         if not searching_text:
             return redirect(url_for('IndexView:get_0'))
-        tokens = word_tokenize(searching_text)
-        searching_text = ' or '.join(tokens)
         query = db.session.query(Post)
         results = search(query, searching_text, sort=True).all()
         return render_template('search_results.html', query=searching_text, results=results, user=g.user)
